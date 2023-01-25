@@ -3,6 +3,35 @@ const GLOBAL_WEBHOOKS = require("../GLOBAL/WEBHOOKS.js") // Webhooks Manager
 
 const anchorme = require("anchorme").default // NPM Um Texte von Links zu unterscheiden
 const dns2 = require("dns2")
+const escapes = [
+    {escape: "̸", replaced: "/"},
+    {escape: "\\/", replaced: "/"},
+    {escape: "\/", replaced: "/"},
+    {escape: "[.]", replaced: "."},
+    {escape: " [.] ", replaced: "."},
+    {escape: "(.)", replaced: "."},
+    {escape: " (.) ", replaced: "."},
+    {escape: " . ", replaced: "."},
+    {escape: " .", replaced: "."},
+    {escape: ". ", replaced: "."},
+    {escape: ",", replaced: "."},
+    {escape: "܁", replaced: "."},
+    {escape: "..", replaced: "."},
+    {escape: "[punkt]", replaced: "."},
+    {escape: "(punkt)", replaced: "."},
+    {escape: " punkt ", replaced: "."},
+    {escape: "..", replaced: "."},
+    {escape: "/.", replaced: "."},
+    {escape: "./", replaced: "."},
+    {escape: "*", replaced: ""},
+    {escape: "`", replaced: ""},
+    {escape: "~", replaced: ""},
+    {escape: "_", replaced: ""},
+    {escape: "\n", replaced: ""},
+    {escape: "@", replaced: ""},
+    {escape: "?", replaced: ""},
+    {escape: "=", replaced: ""},
+]
 
 const options = {
     dns: '1.1.1.1'
@@ -14,46 +43,25 @@ function getAllLinks(input) {
 }
 
 function removeFormat(input) {
-    let output = input.toLowerCase()
-    if (input.includes("̸")) output = output.replaceAll("̸", "/")
-    if (input.includes("[.]")) output = output.replaceAll("[.]", ".")
-    if (input.includes(" [.] ")) output = output.replaceAll(" [.] ", ".")
-    if (input.includes("(.)")) output = output.replaceAll("(.)", ".")
-    if (input.includes(" . ")) output = output.replaceAll(" . ", ".")
-    if (input.includes(" .")) output = output.replaceAll(" .", ".")
-    if (input.includes(". ")) output = output.replaceAll(". ", ".")
-    if (input.includes(" (.) ")) output = output.replaceAll(" (.) ", ".")
-    if (input.includes(",")) output = output.replaceAll(",", ".")
-    if (input.includes("/.")) output = output.replaceAll("/.", ".")
-    if (input.includes("./")) output = output.replaceAll("./", ".")
-    if (input.includes("܁")) output = output.replaceAll("܁", ".")
-    if (input.includes("\\/")) output = output.replaceAll("\\/", "/")
-    if (input.includes("\/")) output = output.replaceAll("\/", "/")
-    if (input.includes("\\")) output = output.replaceAll("\\", "")
-    if (input.includes("[punkt]")) output = output.replaceAll("[punkt]", ".")
-    if (input.includes(" punkt ")) output = output.replaceAll(" punkt ", ".")
-    if (input.includes("(Punkt)")) output = output.replaceAll("(Punkt)", ".")
-    if (input.includes("(punkt)")) output = output.replaceAll("(punkt)", ".")
-    if (input.includes("*")) output = output.replaceAll("*", "")
-    if (input.includes("`")) output = output.replaceAll("`", "")
-    if (input.includes("~")) output = output.replaceAll("~", "")
-    if (input.includes("_")) output = output.replaceAll("_", "")
-    if (input.includes("\n")) output = output.replaceAll("\n", "")
-    if (input.includes("..")) output = output.replaceAll("..", ".")
-    if (input.includes("@")) output = output.replaceAll("@", " ")
-    if (input.includes("?")) output = output.replaceAll("?", "")
-    if (input.includes("=")) output = output.replaceAll("=", "")
+    let output = input = input.toLowerCase()
+
+    for (let escape of escapes) {
+        if (input.includes(escape.escape)) output = output.replaceAll(escape.escape, escape.replaced)
+    }
+
     return output
 }
 
-AUTOMOD_LINKS.go = async function(global, client, message, SQL) {
+AUTOMOD_LINKS.go = async function (global, client, message, SQL) {
     let messageDeleted = false
-    if(message.member == null) return // Return, if no Member found (Webhook)
+    if (message.member == null) return // Return, if no Member found (Webhook)
     let tmp = false; // Set Roles-Check to false
-    if(message.member.permissions.has("ADMINISTRATOR")) {tmp = true} // Set Check to true if Administrator
+    if (message.member.permissions.has("ADMINISTRATOR")) {
+        tmp = true
+    } // Set Check to true if Administrator
     // Check, if Member has Link Proved Role
     message.member.roles.cache.forEach((role) => {
-        if(global.cache.roles.linkproved.includes(role.id)){
+        if (global.cache.roles.linkproved.includes(role.id)) {
             tmp = true;
         }
     })
@@ -73,9 +81,9 @@ AUTOMOD_LINKS.go = async function(global, client, message, SQL) {
             if (unparsedLink != splitedMSG[0]) {
                 let link = unparsedLink.split("\"")[0]
                 let whitelistedLink = global.cache.whitelist.find(string => link.includes(string))
-                if (link != null && whitelistedLink == undefined) {    
+                if (link != null && whitelistedLink == undefined) {
                     let allowed = true;
- 					let parsedLink = link.split(">")[0].split("//")[1].split("/")[0];
+                    let parsedLink = link.split(">")[0].split("//")[1].split("/")[0];
                     const response = await dns.resolve(parsedLink);
                     if (response.answers.length > 0) {
                         allowed = false;
@@ -90,7 +98,7 @@ AUTOMOD_LINKS.go = async function(global, client, message, SQL) {
                             allowed = true;
                         }
                     }
-                    
+
                     if (parsedLink == "tenor.com") allowed = false;
                     if (parsedLink == "bit.ly") allowed = false;
 
@@ -100,13 +108,13 @@ AUTOMOD_LINKS.go = async function(global, client, message, SQL) {
                         } else if (parsedLink.startsWith("172.") && parsedLink.split(".")[1] >= 16 && parsedLink.split(".")[1] <= 31) {
                             allowed = true;
                         } else {
-                           if (response.questions != null) {
+                            if (response.questions != null) {
                                 allowed = false;
                             }
                         }
                     }
 
-                    if(!allowed) {
+                    if (!allowed) {
                         if (!deleteAble) {
                             deleteAble = true
                             Blockedlink = link
